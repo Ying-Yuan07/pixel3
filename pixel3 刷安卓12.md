@@ -137,8 +137,8 @@ export https_proxy="http://127.0.0.1:8123/"
 ```bash
 mkdir kernel
 cd kernel
-mkdir android-msm-crosshatch-4.9-pie-qpr2
-cd android-msm-crosshatch-4.9-pie-qpr2
+mkdir android-msm-crosshatch-4.9-android12
+cd android-msm-crosshatch-4.9-android12
 ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b android-msm-crosshatch-4.9-android12
 ~/bin/repo sync -j8
 ```
@@ -153,10 +153,10 @@ cd ../kernel/android-msm-crosshatch-4.9-pie-qpr2
 build/build.sh
 ```
 
-待内核编译成功后，将生成的Image.lz4-dtb拷贝到aosp12对应目录下，重新编译
+待内核编译成功后，将生成的Image.lz4拷贝到aosp12对应目录下，重新编译
 
 ```bash
-cp out/android-msm-bluecross-4.9/dist/Image.lz4-dtb ../aosp12/device/google/crosshatch-kernel/
+cp out/out/android-msm-pixel-4.9/dist/Image.lz4 ../aosp12/device/google/crosshatch-kernel/
 cd ../aosp12
 make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true -j4 
 ```
