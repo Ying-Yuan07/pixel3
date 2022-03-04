@@ -153,7 +153,9 @@ cd ../kernel/android-msm-crosshatch-4.9-pie-qpr2
 build/build.sh
 ```
 
-待内核编译成功后，将生成的Image.lz4拷贝到aosp12对应目录下，重新编译
+待内核编译成功后，将生成的Image.lz4拷贝到aosp12对应目录下，重新编译，将userdata.img的文件系统设置为f2fs
+
+https://zhuanlan.zhihu.com/p/53009043
 
 ```bash
 cp out/out/android-msm-pixel-4.9/dist/Image.lz4 ../aosp12/device/google/crosshatch-kernel/
