@@ -149,7 +149,7 @@ cd android-msm-crosshatch-4.9-android12
 cd aosp12
 source build/envsetup.sh
 lunch aosp_blueline-userdebug
-cd ../kernel/android-msm-crosshatch-4.9-pie-qpr2
+cd ../kernel/android-msm-crosshatch-4.9-android12
 build/build.sh
 ```
 
@@ -209,4 +209,36 @@ https://daily.elepover.com/2021/05/19/android-s/index.html
 https://blog.csdn.net/Ender_Zhao/article/details/108615512
 
 首先是升级至安卓11（无论是刷固件升级，还是用自带的，都会把Root刷掉）,可以用*magisk来root*
+
+
+
+## others
+
+### 内核config
+
+从android12内核的编译脚本`build/build.sh`可以看出，编译config文件是`private/msm-google/build.config.bluecross`
+
+```shell
+DEFCONFIG=b1c1_defconfig
+KERNEL_DIR=private/msm-google
+. ${ROOT_DIR}/${KERNEL_DIR}/build.config.common.clang
+POST_DEFCONFIG_CMDS="check_defconfig"
+```
+
+config 文件最终读的是`private/msm-google/arch/arm64/configs/b1c1_defconfig`
+
+`POST_DEFCONFIG_CMDS="check_defconfig"`表示进行相容性检查
+
+想要修改配置，可以修改`b1c1_defconfig`文件，删除编译脚本`private/msm-google/build.config.bluecross`中`POST_DEFCONFIG_CMDS="check_defconfig"`，重新编译内核，；
+
+**注**：修改完`b1c1_defconfig`，直接编译内核，可能会报错
+
+```shell
+++ echo ERROR: savedefconfig does not match private/msm-google/arch/arm64/configs/b1c1_defconfig
+ERROR: savedefconfig does not match private/msm-google/arch/arm64/configs/b1c1_defconfig
+```
+
+https://www.akr-developers.com/d/526-pixel3-aosp
+
+解决方案：去除编译脚本中检查部分
 
