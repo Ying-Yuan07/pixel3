@@ -179,9 +179,26 @@ make TARGET_KERNEL_USE=4.9 -j64 RELAX_USES_LIBRARY_CHECK=true
 
 
 
+**错误2**：syntax error of "build/make/tools/merge-event-log-tags.py"
 
+```shell
+SyntaxError: invalid syntax
+[  0% 39/92183] target Java source list: ims-common
+  File "build/make/tools/normalize_path.py", line 25
+    print os.path.normpath(p)
+           ^
+SyntaxError: invalid syntax
+[  0% 40/92183] target Java source list: apache-xml
+  File "build/make/tools/normalize_path.py", line 25
+    print os.path.normpath(p)
+           ^
+SyntaxError: invalid syntax
+[  0% 41/92183] Check module type: out/host/linux-x86/obj/STATIC_LIBRARIES/libadb_intermediates/link_type
+```
 
+**解决方案**：安卓9只支持python2，把python版本切换至`python 2.7.x`
 
+https://en-support.renesas.com/knowledgeBase/19903179
 
 ### 2.4 刷入镜像
 
