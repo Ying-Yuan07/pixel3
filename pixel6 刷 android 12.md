@@ -90,3 +90,80 @@ cd aosp9/out/target/product/blueline
 adb reboot bootloader
 fastboot flashall -w
 ```
+
+
+
+
+
+
+
+## 2 kernel
+
+**android-gs-raviole-5.10-android12-qpr3**
+
+
+
+查看需要的内核版本https://source.android.com/setup/build/building-kernels，
+
+我们选择pixel6对应分支： **android-gs-raviole-5.10-android12-qpr3**；
+
+### 2.1 下载内核代码
+
+#### 将下载源切换回google
+
+1）查看是否有REPO_URL环境变量，若有，将其修改为`https://gerrit.googlesource.com/git-repo`
+
+```shell
+#在~/.bashrc中添加 export REPO_URL="https://gerrit.googlesource.com/git-repo"
+vim ~/.bashrc
+#使环境变量生效
+source ~/.bashrc
+```
+
+2）从google官网拉取kernel源码
+
+从谷歌官网拉代码需要翻墙，参考https://igghelper.com/helper/?p=257，其中[Qv2ray](https://github.com/Qv2ray/Qv2ray/releases/tag/v2.7.0)从[git](https://github.com/Qv2ray/Qv2ray/releases)上下载[Qv2ray-v2.7.0-linux-x64.AppImage](https://github.com/Qv2ray/Qv2ray/releases/download/v2.7.0/Qv2ray-v2.7.0-linux-x64.AppImage)版本，下载之后给其赋权限`chmod u+x Qv2ray-v2.7.0-linux-x64.AppImage `,双击该文件，打开Qv2ray,配置ghelper 中的**通用订阅链接**
+
+```bash
+mkdir -p kernel/android-gs-raviole-5.10-android12-qpr3
+cd kernel/android-gs-raviole-5.10-android12-qpr3 
+ ~/.bin/repo init -u https://android.googlesource.com/kernel/manifest -b android-gs-raviole-5.10-android12-qpr3
+~/.bin/repo sync -j8
+```
+
+拉取下来的kernel与工具如下
+
+<img src="pixel6 刷 android 13.assets/image-20230310221340419.png" alt="image-20230310221340419" style="zoom:80%;" />
+
+
+
+#### 问题1 执行~/.bin/repo init 报错，fatal: cannot get https://gerrit.googlesource.com/git-repo/clone.bundle
+
+解决方案：
+
+1）手动下载
+
+```shell
+wget https://gerrit.googlesource.com/git-repo/clone.bundle
+```
+
+2）执行~/.bin/repo init时指定已下载的clone.bundle，比如放在~/opt路径下
+
+```shell
+ ~/.bin/repo init -u https://android.googlesource.com/kernel/manifest -b android-gs-raviole-5.10-android12-qpr3 --repo-url ~/opt/clone.bundle
+```
+
+#### 问题2  执行~/.bin/repo sync 报错，fatal：无法访问`https://android.googlesource.com/kernel/...`
+
+解决方案：可能是用过代理，取消代理
+
+```shell
+git config  --global --unset http.proxy
+```
+
+可能还是解决不了，那就忽略，等`repo sync`执行完成之后，就直接编译内核
+
+
+
+
+

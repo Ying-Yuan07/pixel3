@@ -92,9 +92,14 @@ fastboot flashall -w
 
 <img src="pixel6 刷 android 13.assets/image-20230308101748576.png" alt="image-20230308101748576" style="zoom:50%;" />
 
+查看手机内核版本
 
+```shell
+adb shell #进入手机shell
+uname -a #查看内核版本
+```
 
-
+![image-20230310144703394](pixel6 刷 android 13.assets/image-20230310144703394.png)
 
 
 
@@ -104,7 +109,7 @@ fastboot flashall -w
 
 我们选择pixel6对应分支： android-gs-raviole-5.10-android13-qpr1；
 
-### 3.1 下载内核代码
+### 2.1 下载内核代码
 
 #### 将下载源切换回google
 
@@ -115,30 +120,59 @@ fastboot flashall -w
 vim ~/.bashrc
 #使环境变量生效
 source ~/.bashrc
-
 ```
 
+2）从google官网拉取kernel源码
 
-
-从google官网拉取kernel源码
+从谷歌官网拉代码需要翻墙，参考https://igghelper.com/helper/?p=257，其中[Qv2ray](https://github.com/Qv2ray/Qv2ray/releases/tag/v2.7.0)从[git](https://github.com/Qv2ray/Qv2ray/releases)上下载[Qv2ray-v2.7.0-linux-x64.AppImage](https://github.com/Qv2ray/Qv2ray/releases/download/v2.7.0/Qv2ray-v2.7.0-linux-x64.AppImage)版本，下载之后给其赋权限`chmod u+x Qv2ray-v2.7.0-linux-x64.AppImage `,双击该文件，打开Qv2ray,配置ghelper 中的**通用订阅链接**
 
 ```bash
-mkdir kernel/android-gs-raviole-5.10-android13-qpr1
+mkdir -p kernel/android-gs-raviole-5.10-android13-qpr1
 cd kernel/android-gs-raviole-5.10-android13-qpr1 
  ~/.bin/repo init -u https://android.googlesource.com/kernel/manifest -b android-gs-raviole-5.10-android13-qpr1
-repo sync -j8
+~/.bin/repo sync -j8
 ```
 
+拉取下来的kernel与工具如下
+
+<img src="pixel6 刷 android 13.assets/image-20230310221340419.png" alt="image-20230310221340419" style="zoom:80%;" />
 
 
-### 3.2 编译kernel
+
+#### 问题1 执行~/.bin/repo init 报错，fatal: cannot get https://gerrit.googlesource.com/git-repo/clone.bundle
+
+解决方案：
+
+1）手动下载
+
+```shell
+wget https://gerrit.googlesource.com/git-repo/clone.bundle
+```
+
+2）执行~/.bin/repo init时指定已下载的clone.bundle，比如放在~/opt路径下
+
+```shell
+ ~/.bin/repo init -u https://android.googlesource.com/kernel/manifest -b android-gs-raviole-5.10-android13-qpr1 --repo-url ~/opt/clone.bundle
+```
+
+#### 问题2  执行~/.bin/repo sync 报错，fatal：无法访问`https://android.googlesource.com/kernel/...`
+
+解决方案：可能是用过代理，取消代理
+
+```shell
+git config  --global --unset http.proxy
+```
+
+可能还是解决不了，那就忽略，等`repo sync`执行完成之后，就直接编译内核
+
+### 2.2 编译kernel
 
 首先我们在AOSP源码目录下准备好编译环境 ,用于启动一些编译时所需要的环境变量，例如：交叉编译工具等
 
 ```bash
 cd ~/workspace/pixel3_all/android-13.0.0_r30/
 source build/envsetup.sh
-lunch aosp_oriole-userdebug 
+lunch aosp_oriole-userdebug
 ```
 
 
@@ -150,17 +184,28 @@ cd ~/workspace/pixel3_all/kernel/android-gs-raviole-5.10-android13-qpr1
 build/build.sh
 ```
 
+安卓13 已经抛弃了`build/build.sh`[1],采用`bazel `,但是我们从goole拉下来的kernel中没有common目录！！
+
+```shell
+tools/bazel build //common:kernel_aarch64_dist
+```
 
 
-内核二进制文件、模块和相应的映像位于 `out/BRANCH/dist` 目录下，将Image.lz4-dtb拷贝到Android13系统源码的device/google/crosshatch-kernel目录下，   
+
+有人通过`build/build.sh`成功编译了`android-msm-coral-4.14-android13`[2]
+
+```shell
+KBUILD_BUILD_VERSION=1 KBUILD_BUILD_USER=build-user KBUILD_BUILD_HOST=build-host KBUILD_CONFIG=private/gs-google/build.config.aarch64 build/build.sh
+```
+
+大概需要编译一个半小时
+
+
+
+内核二进制文件、模块和相应的映像位于 `out/BRANCH/dist` 目录下，将Image.lz4-dtb拷贝到Android13系统源码的`device/google/raviole-kernel`目录下，   
 
 ```bash
-tan@tan:~/pixel3_all/kernel_andrio9/ustc/msm/out/android-msm-bluecross-4.9/dist$ ls
-abi.prop       kernel-headers.tar.gz       snd-soc-cs35l36.ko          snd-soc-wcd9xxx.ko  vmlinux
-dtbo.img       kernel-uapi-headers.tar.gz  snd-soc-sdm845.ko           snd-soc-wcd-spi.ko  wcd-core.ko
-ftm5.ko        pinctrl-wcd.ko              snd-soc-sdm845-max98927.ko  System.map          wcd-dsp-glink.ko
-Image.lz4-dtb  sec_touch.ko                snd-soc-wcd934x.ko          unstripped          wlan.ko
-
+cp ~/workspace/pixel3_all/kernel/android-gs-raviole-5.10-android13-qpr1/out/android13-gs-pixel-5.10-gs101/dist/Image.lz4 ~/workspace/pixel3_all/android-13.0.0_r30/device/google/raviole-kernel
 ```
 
 
@@ -180,77 +225,83 @@ make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true -
 
 ```bash
 #fastboot flashall -w
-yy@yy:~/workspace/pixel3_all/aosp9/out/target/product/blueline$ adb reboot bootloader
-yy@yy:~/workspace/pixel3_all/aosp9/out/target/product/blueline$ fastboot flashall -w
+cd ~/workspace/pixel3_all/android-13.0.0_r30/out/target/product/oriole #或者将该路径下的img文件拷贝到windows环境（需要配置ANDROID_PRODUCT_OUT环境变量，fastboot flashall刷新的是） 
+adb reboot bootloader
+fastboot flashall -w
 --------------------------------------------
-Bootloader Version...: b1c1-0.1-5343672
-Baseband Version.....: g845-00017-190312-B-5369743
-Serial Number........: 89AX07GLX
+Bootloader Version...: slider-1.2-8085990
+Baseband Version.....: g5123b-97927-220225-B-8226700
+Serial Number........: 22161FDF6003P4
 --------------------------------------------
-Checking product
-OKAY [  0.060s]
-target reported max download size of 268435456 bytes
+Checking 'product'                                 OKAY [  0.000s]
+Setting current slot to 'a'                        OKAY [  0.063s]
+Sending 'boot_a' (65536 KB)                        OKAY [  1.964s]
+Writing 'boot_a'                                   OKAY [  0.078s]
+Sending 'dtbo_a' (16384 KB)                        OKAY [  0.469s]
+Writing 'dtbo_a'                                   OKAY [  0.016s]
+Sending 'pvmfw_a' (1024 KB)                        OKAY [  0.031s]
+Writing 'pvmfw_a'                                  OKAY [  0.000s]
+Sending 'vbmeta_a' (8 KB)                          OKAY [  0.000s]
+Writing 'vbmeta_a'                                 OKAY [  0.000s]
+Sending 'vbmeta_system_a' (4 KB)                   OKAY [  0.000s]
+Writing 'vbmeta_system_a'                          OKAY [  0.000s]
+Sending 'vendor_boot_a' (65536 KB)                 OKAY [  1.859s]
+Writing 'vendor_boot_a'                            OKAY [  0.078s]
+Rebooting into fastboot                            OKAY [  0.000s]
+< waiting for any device >
+Sending 'super' (4 KB)                             OKAY [  0.004s]
+Updating super partition                           OKAY [  0.015s]
+Resizing 'product_a'                               OKAY [  0.000s]
+Resizing 'system_a'                                OKAY [  0.008s]
+Resizing 'system_ext_a'                            OKAY [  0.000s]
+Resizing 'system_b'                                OKAY [  0.010s]
+Resizing 'vendor_a'                                OKAY [  0.000s]
+Resizing 'vendor_dlkm_a'                           OKAY [  0.000s]
+Resizing 'vendor_b'                                OKAY [  0.000s]
+Invalid sparse file format at header magic
+Resizing 'product_a'                               OKAY [  0.000s]
+Sending sparse 'product_a' 1/2 (262140 KB)         OKAY [  6.901s]
+Writing 'product_a'                                OKAY [  0.392s]
+Sending sparse 'product_a' 2/2 (93148 KB)          OKAY [  2.459s]
+Writing 'product_a'                                OKAY [  0.160s]
+Invalid sparse file format at header magic
+Resizing 'system_a'                                OKAY [  0.000s]
+Sending sparse 'system_a' 1/4 (262116 KB)          OKAY [  6.906s]
+Writing 'system_a'                                 OKAY [  0.393s]
+Sending sparse 'system_a' 2/4 (262120 KB)          OKAY [  6.889s]
+Writing 'system_a'                                 OKAY [  0.399s]
+Sending sparse 'system_a' 3/4 (262140 KB)          OKAY [  6.911s]
+Writing 'system_a'                                 OKAY [  0.375s]
+Sending sparse 'system_a' 4/4 (89908 KB)           OKAY [  2.359s]
+Writing 'system_a'                                 OKAY [  0.187s]
+Invalid sparse file format at header magic
+Resizing 'system_ext_a'                            OKAY [  0.000s]
+Sending sparse 'system_ext_a' 1/2 (262116 KB)      OKAY [  6.920s]
+Writing 'system_ext_a'                             OKAY [  0.375s]
+Sending sparse 'system_ext_a' 2/2 (26284 KB)       OKAY [  0.703s]
+Writing 'system_ext_a'                             OKAY [  0.109s]
+Resizing 'system_b'                                OKAY [  0.016s]
+Sending 'system_b' (25500 KB)                      OKAY [  0.656s]
+Writing 'system_b'                                 OKAY [  0.062s]
+Invalid sparse file format at header magic
+Resizing 'vendor_a'                                OKAY [  0.000s]
+Sending sparse 'vendor_a' 1/3 (262116 KB)          OKAY [  6.925s]
+Writing 'vendor_a'                                 OKAY [  0.375s]
+Sending sparse 'vendor_a' 2/3 (262140 KB)          OKAY [  6.865s]
+Writing 'vendor_a'                                 OKAY [  0.407s]
+Sending sparse 'vendor_a' 3/3 (18552 KB)           OKAY [  0.493s]
+Writing 'vendor_a'                                 OKAY [  0.088s]
+Resizing 'vendor_dlkm_a'                           OKAY [  0.006s]
+Sending 'vendor_dlkm_a' (39796 KB)                 OKAY [  1.256s]
+Writing 'vendor_dlkm_a'                            OKAY [  0.114s]
+Erasing 'userdata'                                 OKAY [  0.412s]
 Erase successful, but not automatically formatting.
 File system type raw not supported.
+Erasing 'metadata'                                 OKAY [  0.015s]
 Erase successful, but not automatically formatting.
 File system type raw not supported.
-Sending 'boot_a' (65536 KB)...
-OKAY [  2.509s]
-Writing 'boot_a'...
-OKAY [  0.708s]
-Sending 'dtbo_a' (8192 KB)...
-OKAY [  0.383s]
-Writing 'dtbo_a'...
-OKAY [  0.102s]
-Sending 'product_a' (4956 KB)...
-OKAY [  0.288s]
-Writing 'product_a'...
-OKAY [  0.170s]
-Sending sparse 'system_a' 1/5 (262140 KB)...
-OKAY [  8.560s]
-Writing 'system_a' 1/5...
-OKAY [  0.366s]
-Sending sparse 'system_a' 2/5 (262140 KB)...
-OKAY [  9.334s]
-Writing 'system_a' 2/5...
-OKAY [  0.366s]
-Sending sparse 'system_a' 3/5 (262140 KB)...
-OKAY [  9.114s]
-Writing 'system_a' 3/5...
-OKAY [  0.366s]
-Sending sparse 'system_a' 4/5 (262140 KB)...
-OKAY [  8.734s]
-Writing 'system_a' 4/5...
-OKAY [  0.366s]
-Sending sparse 'system_a' 5/5 (137016 KB)...
-OKAY [  4.734s]
-Writing 'system_a' 5/5...
-OKAY [  1.160s]
-Sending 'system_b' (86884 KB)...
-OKAY [  2.840s]
-Writing 'system_b'...
-OKAY [  0.910s]
-Sending 'vbmeta_a' (4 KB)...
-OKAY [  0.120s]
-Writing 'vbmeta_a'...
-OKAY [  0.063s]
-Sending sparse 'vendor_a' 1/2 (262140 KB)...
-OKAY [  8.767s]
-Writing 'vendor_a' 1/2...
-OKAY [  0.366s]
-Sending sparse 'vendor_a' 2/2 (202628 KB)...
-OKAY [  6.954s]
-Writing 'vendor_a' 2/2...
-OKAY [  1.440s]
-Setting current slot to 'a'...
-OKAY [  0.317s]
-Erasing 'userdata'...
-OKAY [  6.163s]
-Erasing 'metadata'...
-OKAY [  0.225s]
-Rebooting...
-
-Finished. Total time: 77.761s
+Rebooting                                          OKAY [  0.000s]
+Finished. Total time: 85.728s
 
 ```
 
@@ -259,43 +310,15 @@ Finished. Total time: 77.761s
 ```bash
 #adb shell后 cat /proc/version ，内核版本变成了 5.10
 
-yy@yy:~/workspace/pixel3_all/aosp9/out/target/product/blueline$ adb shell
-blueline:/ $ cat /proc/version                                                                         
-Linux version 4.9.124_audio (build-user@build-host) (Android clang version 5.0.1 (https://us3-mirror-android.googlesource.com/toolchain/clang 00e4a5a67eb7d626653c23780ff02367ead74955) (https://us3-mirror-android.googlesource.com/toolchain/llvm ef376ecb7d9c1460216126d102bb32fc5f73800d) (based on LLVM 5.0.1svn)) #1 SMP PREEMPT Wed Feb 6 22:09:52 UTC 2019
-```
-
-编译的镜像用的是/mnt/sdb/pixel-kernel/private/msm-google/fs/f2fs下面的文件  
-
-make bootimage  
-
-fastboot flash boot boot.img    
-
-
-
-#### 问题1：触屏失灵
-
-https://forum.xda-developers.com/t/built-kernel-from-scratch-touchscreen-doesnt-work.3768804/
-
-原因：触屏驱动模块没有在pixel3安装成功
-
-解决方案：将google/repo/out/android-msm-bluecross-4.9/dist下的.ko文件，拷贝到/vendor/lib/modules/
-
-```bash
-#disable-verity on the phone:
-adb root
-adb disable-verity
-adb shell sync
-adb reboot
-#push module:
-adb root
-adb remount
-adb push google/repo/out/android-msm-bluecross-4.9/dist/*.ko  /vendor/lib/modules/
-adb reboot
+oriole:/ # cat /proc/version
+Linux version 5.10.107-android13-4-00020-g02b5dfab573c-ab9358130 (build-user@build-host) (Android (8508608, based on r450784e) clang version 14.0.7 (https://android.googlesource.com/toolchain/llvm-project 4c603efb0cca074e9238af8b4106c30add4418f6), LLD 14.0.7) #1 SMP PREEMPT Thu Dec 1 18:28:18 UTC 2022
 ```
 
 
 
+## ref
 
+[1] https://source.android.com/docs/setup/build/building-kernels
 
-
+[2]编译android-msm-coral-4.14-android13， https://www.akr-developers.com/d/629-piexl4google/2  , 2022.9.23
 

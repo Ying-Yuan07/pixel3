@@ -378,8 +378,8 @@ https://source.android.com/setup/build/building-kernels，
 ```bash
 mkdir kernel
 cd kernel 
-repo init -u https://android.googlesource.com/platform/manifest
-repo init -u https://android.googlesource.com/platform/manifest -b android-msm-crosshatch-4.9-pie-qpr2
+repo init -u https://android.googlesource.com/kernel/manifest
+repo init -u https://android.googlesource.com/kernel/manifest -b android-msm-crosshatch-4.9-pie-qpr2
 repo sync -j8
 ```
 
