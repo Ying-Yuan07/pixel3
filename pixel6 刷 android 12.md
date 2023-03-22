@@ -167,3 +167,37 @@ git config  --global --unset http.proxy
 
 
 
+#### 问题3 repo sync 拉下来的代码不全
+
+https://www.cnblogs.com/wi100sh/p/4535421.html
+
+
+
+
+
+#### 问题 4 查看拉下来的代码状态
+
+https://blog.csdn.net/wh_19910525/article/details/8164107
+
+```shell
+~/.bin/repo status
+```
+
+
+
+#### 问题5 repo--提示“A new version of repo is available”
+
+**方案1**
+
+https://blog.csdn.net/qq_40222981/article/details/120708146
+1.repo是可以自我升级的
+2“出错原因是曾使用repo [sync](https://so.csdn.net/so/search?q=sync&spm=1001.2101.3001.7020)从其它库sync过代码，删掉~/.repoconfig即可”
+
+**方案2**
+
+https://www.cnblogs.com/yayagepei/articles/2753253.html
+
+```shell
+repo init --repo-url https://android.googlesource.com/tools/repo -u http://android.googlesource.com/platform/manifest -b android-2.3.3_r1
+```
+
