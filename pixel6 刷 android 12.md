@@ -8,7 +8,13 @@
 
 参考 [pixel3 刷安卓12](https://github.com/Ying-Yuan07/pixel3/blob/main/pixel3%20%E5%88%B7%E5%AE%89%E5%8D%9312.md)
 
+https://source.android.com/docs/setup/download#installing-repo
+
 ### 1.2 初始化本地仓库
+
+https://source.android.com/docs/setup/download/downloading
+
+
 
 查看pixel 6支持的系统版本https://source.android.com/docs/setup/about/build-numbers#source-code-tags-and-builds，与`pixel3（android-12.0.0_r25）`比较接近的安卓12版本为
 
