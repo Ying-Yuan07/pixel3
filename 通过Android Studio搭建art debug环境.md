@@ -175,11 +175,13 @@ emulator -avd <avd name> -verbose -no-boot-anim -system /path/to/system.img
 
 Android Studio的Debug窗口会自动弹出来，如下：
 
-<img src="https://pic4.zhimg.com/80/v2-3d5b5f8bca6002e44cc6395aacf0a027_720w.webp" alt="img" style="zoom:67%;" />
+<img src="通过Android Studio搭建art debug环境.assets/image-20230516140050790.png" alt="image-20230516140050790" style="zoom:67%;" />
 
 我们点击那个 `pause program` 按钮，可以**让程序暂停运行**,可以看到堆栈信息，并可以进入lldb
 
-<img src="https://pic4.zhimg.com/80/v2-5ce45a298d5be0fdbebcbfaff0467f6f_720w.webp" alt="img" style="zoom:67%;" />
+<img src="通过Android Studio搭建art debug环境.assets/image-20230516140113311.png" alt="image-20230516140113311" style="zoom:80%;" />
+
+
 
 
 
@@ -237,7 +239,7 @@ symbol file '/home/yy/AndroidStudioProjects/artDebugAndroid9/app/symbols/libart.
 
 这时候，我们再触发断点（**点击demo项目的Debug按钮**），看看发生了什么？！
 
-![img](https://pic4.zhimg.com/80/v2-e2f61d986d0281a2264abeed84178787_720w.webp)
+![image-20230516140148734](通过Android Studio搭建art debug环境.assets/image-20230516140148734.png)
 
 至此，我们已经成功滴完成了在Android Studio中Native代码的源码调试。你可以像调试Java代码一样调试Native代码，step/in/out/over，条件断点，watch point任你飞。你可以借助这个工具去探究Android底层运行原理，比如垃圾回收机制，对象分配机制，Binder通信等等，完全不在话下！
 
@@ -348,7 +350,7 @@ ping dl.google.com
 
 首先进入 [http://ip.tool.chinaz.com/dl.google.com](https://links.jianshu.com/go?to=http%3A%2F%2Fip.tool.chinaz.com%2Fdl.google.com)
 
-![img](https:////upload-images.jianshu.io/upload_images/8830165-8313deb4a084c67b.png?imageMogr2/auto-orient/strip|imageView2/2/w/1200/format/webp)
+<img src="通过Android Studio搭建art debug环境.assets/image-20230516140231600.png" alt="image-20230516140231600" style="zoom: 67%;" />
 
 将获取的ip地址拷贝下载,这里是 203.208.40.33
 
