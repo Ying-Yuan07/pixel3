@@ -396,7 +396,7 @@ tan@tan:~/pixel3_all/aosp9$ lunch aosp_blueline-userdebug
 
 
 
-编译内核
+**编译内核**
 
 ```bash
 yy@yy:~/workspace/pixel3_all/kernel/android9/google/repo$ build/build.sh
@@ -417,7 +417,7 @@ Image.lz4-dtb  sec_touch.ko                snd-soc-wcd934x.ko          unstrippe
 
 
 
-重新编译aosp
+**重新编译aosp**
 
 ```bash
 yy@yy:~/workspace/pixel3_all/aosp9$ source build/envsetup.sh
@@ -427,7 +427,33 @@ yy@yy:~/workspace/pixel3_all/aosp9$ make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2
 
 
 
-重新刷机
+**查看内核是否被成功编译进aosp**
+
+AOSP重新生成镜像`vbmeta.img,system.img,boot.img,ramdisk-recovery.img`与`kernel`,通过检查`Linux version`来检查kernel是否被成功编译进aosp[1]，
+
+```shell
+#1 查看内核源码的版本
+~/workspace/pixel3_all/kernel/android-msm-crosshatch-4.9-pie-qpr2/out/android-msm-bluecross-4.9/dist
+grep -a "Linux version" Image.lz4-dtb
+```
+
+编译内核源码生成的Image.lz4-dtb内核版本为`Linux version 4.9.124-dirty`，其中dirty是指修改过了kernel源代码
+
+![image-20230323173355519](pixel 3 刷机过程.assets/image-20230323173355519.png)
+
+```shell
+#2 查看AOSP生成的镜像内核版本
+cd ~/workspace/pixel3_all/aosp9-bak/out/target/product/blueline
+grep -a "Linux version" boot.img
+```
+
+编译AOSP生成的boot.img内核版本为`Linux version 4.9.124-dirty`，与#1中一致，说明内核代码被成功编译进了AOSP，可以放心刷机啦！
+
+![image-20230323172843315](pixel 3 刷机过程.assets/image-20230323172843315.png)
+
+
+
+**重新刷机**
 
 ```bash
 #fastboot flashall -w
@@ -508,18 +534,33 @@ Finished. Total time: 77.761s
 验证是否已经刷机成功
 
 ```bash
-#adb shell后 cat /proc/version ，内核版本变成了 4.9 
+#1adb shell后 cat /proc/version ，内核版本变成了 4.9 
 
 yy@yy:~/workspace/pixel3_all/aosp9/out/target/product/blueline$ adb shell
 blueline:/ $ cat /proc/version                                                                         
 Linux version 4.9.124_audio (build-user@build-host) (Android clang version 5.0.1 (https://us3-mirror-android.googlesource.com/toolchain/clang 00e4a5a67eb7d626653c23780ff02367ead74955) (https://us3-mirror-android.googlesource.com/toolchain/llvm ef376ecb7d9c1460216126d102bb32fc5f73800d) (based on LLVM 5.0.1svn)) #1 SMP PREEMPT Wed Feb 6 22:09:52 UTC 2019
 ```
 
-编译的镜像用的是/mnt/sdb/pixel-kernel/private/msm-google/fs/f2fs下面的文件  
 
-make bootimage  
 
-fastboot flash boot boot.img    
+```shell
+#2 adb shell后 uame -a 
+adb shell uname -a
+Linux localhost 4.9.124-dirty_audio-dirty #1 SMP PREEMPT Wed Feb 6 22:09:52 UTC 2019 aarch64
+```
+
+
+
+
+
+**单独刷内核镜像**
+
+```shell
+adb reboot bootloader
+fastboot erase boot
+fastboot flash boot boot.img
+fastboot reboot
+```
 
 
 
@@ -544,3 +585,8 @@ adb push google/repo/out/android-msm-bluecross-4.9/dist/*.ko  /vendor/lib/module
 adb reboot
 ```
 
+
+
+## refs
+
+[1] 确定内核版本, https://source.android.com/docs/setup/build/building-kernels?hl=zh-cn#id-version

@@ -112,79 +112,11 @@ fastboot flashall -w
 
 ## kernel 下载、编译与烧录
 
-### 1.下载kernel
 
-从官方网站下载kernel源码与安装工具包
 
-#### 翻墙
 
-登录https://tankecloud.me/register?aff=1015&code=7e79dd152a75查看结点配置信息
 
-教程：https://notes-by-yangjinjie.readthedocs.io/zh_CN/latest/os/ubuntu-debian/Ubuntu%20Server%E5%91%BD%E4%BB%A4%E8%A1%8C%E9%85%8D%E7%BD%AEshadowsocks%E5%85%A8%E5%B1%80%E4%BB%A3%E7%90%86.html
 
-https://floperry.github.io/2019/02/24/2018-06-25-Ubuntu-18.04-%E4%B8%8B%E8%A7%A3%E5%86%B3-shadowsocks-%E6%9C%8D%E5%8A%A1%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/
-
-配置完成后，每次只需要执行
-
-```bash
-sudo sslocal -c shawdowsocks.json -d start
-export http_proxy="http://127.0.0.1:8123/"
-export https_proxy="http://127.0.0.1:8123/"
-```
-
-#### 下载内核代码
-
-```bash
-mkdir kernel
-cd kernel
-mkdir android-msm-crosshatch-4.9-android12
-cd android-msm-crosshatch-4.9-android12
-~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b android-msm-crosshatch-4.9-android12
-~/bin/repo sync -j8
-```
-
-#### 编译内核
-
-```bash
-cd aosp12
-source build/envsetup.sh
-lunch aosp_blueline-userdebug
-cd ../kernel/android-msm-crosshatch-4.9-android12
-build/build.sh
-```
-
-待内核编译成功后，将生成的Image.lz4拷贝到aosp12对应目录下，重新编译，将userdata.img的文件系统设置为f2fs
-
-https://zhuanlan.zhihu.com/p/53009043
-
-```bash
-cp out/out/android-msm-pixel-4.9/dist/Image.lz4 ../aosp12/device/google/crosshatch-kernel/
-cd ../aosp12
-make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true -j4 
-```
-
-#### 烧录内核
-
-```bash
-cd aosp9/out/target/product/blueline
-adb reboot bootloader
-fastboot flashall -w
-```
-
-或者将/blueline路径下的镜像文件拷贝的本地
-
-```shell
-adb reboot bootloader
-fastboot flashall -w
-```
-
-查看手机内核版本
-
-```shell
-adb root
-adb shell "uname -a"
-#结果为Linux localhost 4.9.270-dirty #1 repo:android-msm-crosshatch-4.9-android12 SMP PREEMPT Mon Jan aarch64 
-```
 
 ## 刷官方镜像包
 

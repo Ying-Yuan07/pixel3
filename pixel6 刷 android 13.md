@@ -1,5 +1,7 @@
 # pixel6 刷 android 13
 
+**失败了，aosp 没有将编译内核生成的Image.lz4编译进boot.img，重新编译aosp，所有的镜像都不更新！！！！！**
+
 环境：大机房74服务器
 
 ## 1. aosp下载与编译
@@ -53,9 +55,9 @@ cd ~/workspace/pixel3_all/android-13.0.0_r30/
 
 输入`I ACCEPT`
 
-### 1.4 编译aosp12
+### 1.4 编译aosp13
 
-查看pixel6 android12 对应的内核版本https://source.android.com/docs/setup/build/building-kernels，这里表示的是最高版本
+查看pixel6 android13 对应的内核版本https://source.android.com/docs/setup/build/building-kernels，这里表示的是最高版本
 
 ![image-20221122160752712](pixel6 刷 android 12.assets/image-20221122160752712.png)
 
@@ -124,7 +126,7 @@ source ~/.bashrc
 
 2）从google官网拉取kernel源码
 
-从谷歌官网拉代码需要翻墙，参考https://igghelper.com/helper/?p=257，其中[Qv2ray](https://github.com/Qv2ray/Qv2ray/releases/tag/v2.7.0)从[git](https://github.com/Qv2ray/Qv2ray/releases)上下载[Qv2ray-v2.7.0-linux-x64.AppImage](https://github.com/Qv2ray/Qv2ray/releases/download/v2.7.0/Qv2ray-v2.7.0-linux-x64.AppImage)版本，下载之后给其赋权限`chmod u+x Qv2ray-v2.7.0-linux-x64.AppImage `,双击该文件，打开Qv2ray,配置ghelper 中的**通用订阅链接**
+从谷歌官网拉代码需要翻墙，参考https://igghelper.com/helper/?p=257， 其中[Qv2ray](https://github.com/Qv2ray/Qv2ray/releases/tag/v2.7.0) 从[git ](https://github.com/Qv2ray/Qv2ray/releases)  上下载[Qv2ray-v2.7.0-linux-x64.AppImage](https://github.com/Qv2ray/Qv2ray/releases/download/v2.7.0/Qv2ray-v2.7.0-linux-x64.AppImage)  版本，下载之后给其赋权限 `chmod u+x Qv2ray-v2.7.0-linux-x64.AppImage `, 双击该文件，打开Qv2ray,配置ghelper 中的**通用订阅链接**
 
 ```bash
 mkdir -p kernel/android-gs-raviole-5.10-android13-qpr1
@@ -316,9 +318,58 @@ Linux version 5.10.107-android13-4-00020-g02b5dfab573c-ab9358130 (build-user@bui
 
 
 
+##### 问题1 手机内核版本与aosp自带的kernel版本一致，与新编译的内核版本不一致
+
+猜想1:没有将Image.lz4编译进aosp的镜像
+
+验证过程
+
+#1 查看编译好kernel下的Image.lz4镜像版本
+
+```shell
+cd ~/workspace/pixel3_all/android-13.0.0_r30
+grep -a "Linux version" device/google/raviole-kernel/Image.lz4
+```
+
+![image-20230324115232476](pixel6 刷 android 13.assets/image-20230324115232476.png)
+
+
+
+#2 通过md5sum确认Image.lz4已经被拷贝到AOSP 树中相应的内核二进制文件位置
+
+```shell
+md5sum
+```
+
+#3  查看AOSP 树包含预构建的内核版本[3]
+
+AOSP 树包含预构建的内核版本。git 日志会在提交消息中显示正确的版本：
+
+```
+cd $AOSP/device/VENDOR/NAME
+git log --max-count=1
+```
+
+
+
+#4  查看AOSP 新生成的boot.img 版本
+
+```shell
+cd ~/workspace/pixel3_all/android-13.0.0_r30/out/target/product/oriole
+grep -a "Linux version" boot.img
+```
+
+![image-20230324115405362](pixel6 刷 android 13.assets/image-20230324115405362.png)
+
+
+
+
+
 ## ref
 
 [1] https://source.android.com/docs/setup/build/building-kernels
 
 [2]编译android-msm-coral-4.14-android13， https://www.akr-developers.com/d/629-piexl4google/2  , 2022.9.23
+
+[3] 确定内核版本, https://source.android.com/docs/setup/build/building-kernels?hl=zh-cn#id-version
 

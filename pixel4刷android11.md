@@ -1,6 +1,4 @@
-# pixel6 刷 android 12
-
-**失败了，aosp 没有将编译内核生成的Image.lz4编译进boot.img，重新编译aosp，所有的镜像都不更新！！！！！**
+# pixel4刷android11
 
 环境：大机房74服务器
 
@@ -16,18 +14,36 @@ https://source.android.com/docs/setup/download#installing-repo
 
 https://source.android.com/docs/setup/download/downloading
 
+#### **确认aosp版本**
+
+查看pixel 4 支持的系统版本https://source.android.com/docs/setup/about/build-numbers#source-code-tags-and-builds ，选择`android-11.0.0_r36`(随便选一个吧)，该版本对应的`Build ID`为`RQ2A.210505.002`
+
+![image-20230329211209978](pixel4刷android11.assets/image-20230329211209978.png)
+
+![image-20230329211241724](pixel4刷android11.assets/image-20230329211241724.png)
 
 
-查看pixel 6支持的系统版本https://source.android.com/docs/setup/about/build-numbers#source-code-tags-and-builds，与`pixel3（android-12.0.0_r25）`比较接近的安卓12版本为
 
-![image-20221122153712650](pixel6 刷 android 12.assets/image-20221122153712650.png)
+#### 将下载源切换到中科大
 
-![image-20221122153631592](pixel6 刷 android 12.assets/image-20221122153631592.png)
+1）查看是否有REPO_URL环境变量，若有，将其修改为`https://gerrit.googlesource.com/git-repo`
 
 ```shell
-mkdir android-12.0.0_r27   
-cd android-12.0.0_r27 
-~/.bin/repo init -u git://mirrors.ustc.edu.cn/aosp/platform/manifest -b android-12.0.0_r27
+#在~/.bashrc中添加 export REPO_URL="https://gerrit-googlesource.proxy.ustclug.org/git-repo"
+vim ~/.bashrc
+#使环境变量生效
+source ~/.bashrc
+```
+
+
+
+#### 拉取aosp源码
+
+```shell
+cd ~/workspace/pixel4_all/android
+mkdir android-11.0.0_r36  
+cd android-11.0.0_r36 
+~/.bin/repo init -u git://mirrors.ustc.edu.cn/aosp/platform/manifest -b android-11.0.0_r36
 ~/.bin/repo sync -j4 
 ```
 
@@ -35,53 +51,56 @@ cd android-12.0.0_r27
 
 #### 下载
 
-在官网[驱动库](https://developers.google.com/android/drivers)中查找`pixel6:android-12.0.0_r27（SQ1D.220105.007）`的[二进制驱动](https://developers.google.com/android/drivers#oriolesq1d.220105.007)
+在官网[驱动库](https://developers.google.com/android/drivers)中查找`pixel4:android-11.0.0_r36（RQ2A.210505.002）`的[二进制驱动](https://developers.google.com/android/drivers#flamerq2a.210505.002)
 
-![image-20221122155039007](pixel6 刷 android 12.assets/image-20221122155039007.png)
+![image-20230329215157784](pixel4刷android11.assets/image-20230329215157784.png)
 
 ```shell
 #dowload drivers package
-cd ~/workspace/pixel3_all/packsges/drivers/
-wget https://dl.google.com/dl/android/aosp/google_devices-oriole-sq1d.220105.007-37e46fa2.tgz
-#check package
-yy@tan:~/workspace/pixel3_all/packsges/drivers$ sha256sum google_devices-oriole-sq1d.220105.007-37e46fa2.tgz 
-c3912a5c7862245ecc28e2ef4f36f9b9d5ee668f2a6c03b5981ae74564fd932b  google_devices-oriole-sq1d.220105.007-37e46fa2.tgz
+cd ~/workspace/pixel4_all/packages/drivers/android-11.0.0_r36
+wget https://dl.google.com/dl/android/aosp/google_devices-flame-rq2a.210505.002-cdab03cc.tgz
+wget https://dl.google.com/dl/android/aosp/qcom-flame-rq2a.210505.002-5ae0fbda.tgz
+#check package,确认下载正确
+sha256sum google_devices-flame-rq2a.210505.002-cdab03cc.tgz qcom-flame-rq2a.210505.002-5ae0fbda.tgz
 ```
 
-注：从pixel6开始，驱动只保留了`Google自己开发的 Vendor image:extract-google_devices-oriole.sh`删掉了第三方高通Qualcomm开发的`GPS, Audio, Camera, Gestures, Graphics, DRM, Video, Sensors驱动`
+![image-20230329215526731](pixel4刷android11.assets/image-20230329215526731.png)
+
+
 
 #### **安装二级制驱动**
 
 ```shell
-tar -xvf google_devices-oriole-sq1d.220105.007-37e46fa2.tgz -C ~/workspace/pixel3_all/android-12.0.0_r27/
-cd ~/workspace/pixel3_all/android-12.0.0_r27/
-./extract-google_devices-oriole.sh
+cd ~/workspace/pixel4_all/packages/drivers/android-11.0.0_r36
+tar -xvf google_devices-flame-rq2a.210505.002-cdab03cc.tgz -C ~/workspace/pixel4_all/android/android-11.0.0_r36
+tar -xvf qcom-flame-rq2a.210505.002-5ae0fbda.tgz -C ~/workspace/pixel4_all/android/android-11.0.0_r36
+cd ~/workspace/pixel4_all/android/android-11.0.0_r36
+./extract-google_devices-flame.sh
+./extract-qcom-flame.sh
 ```
 
 输入`I ACCEPT`
 
-### 4.编译aosp12
+### 1.4.编译aosp11
 
-查看pixel6 android12 对应的内核版本https://source.android.com/docs/setup/build/building-kernels，这里表示的是最高版本
+#### 查看pixel4 对应的内核版本
 
-![image-20221122160752712](pixel6 刷 android 12.assets/image-20221122160752712.png)
+查看pixel4内核分支 https://source.android.com/docs/setup/build/building-kernels  ，pixel4 对应的内核分支为`msm-coral` :   https://android.googlesource.com/kernel/msm/+refs  ,   设备代号为`flame`，AOSP中pixel4的二进制文件在`device/google/coral-kernel`路径下，即后文编译好kernel生成的`Image-lz4`需要被拷贝到该路径，另外`Repo branches`表示当前设备支持的最高内核版本，即`android-msm-coral-4.14-android13`
 
-![image-20221122160810939](pixel6 刷 android 12.assets/image-20221122160810939.png)
+![image-20230329213139881](pixel4刷android11.assets/image-20230329213139881.png)
 
-从https://android.googlesource.com/kernel/查看具体的[内核版本号](https://android.googlesource.com/kernel/gs/+refs)：**android-gs-raviole-5.10-android12-qpr3**，则make的内核的版本为5.10，
+![image-20230329213117392](pixel4刷android11.assets/image-20230329213117392.png)
 
-怎么知道aosp的版本与哪个kernel对应，还是只要是安卓12能对上就行？？？
-
-
+查看pixel4-andriod11具体的[内核版本号](https://android.googlesource.com/kernel/msm/+refs) ：**[android-msm-coral-4.14-android11](https://android.googlesource.com/kernel/msm/+/refs/heads/android-msm-coral-4.14-android11)** ，则make aosp的内核的版本为4.14(aosp编译时指定的版本最好与内核版本一致，高于4.14是刷不进手机的，低于4.14没有试过)
 
 ```shell
-cd ~/workspace/pixel3_all/android-12.0.0_r27/
+cd ~/workspace/pixel4_all/android/android-11.0.0_r36
 source build/envsetup.sh
 lunch aosp_oriole-userdebug 
-make TARGET_KERNEL_USE=5.10 -j64 RELAX_USES_LIBRARY_CHECK=true
+make TARGET_KERNEL_USE=4.14 -j64 RELAX_USES_LIBRARY_CHECK=true
 ```
 
-注：`lunch aosp_xxx-userdebug` ,`xxx`为 google为每一个机型取的代号，pixel6 为`oriole`
+注：`lunch aosp_xxx-userdebug` ,`xxx`为 google为每一个机型取的代号，pixel4 为`oriole`，可以通过`lunch`指令查看aosp支持的设备与编译版本
 
 清除编译结果
 
@@ -89,7 +108,34 @@ make TARGET_KERNEL_USE=5.10 -j64 RELAX_USES_LIBRARY_CHECK=true
 make clobber
 ```
 
-### 5.烧录aosp12镜像
+
+
+#### 查看生成的内核版本
+
+#todo
+
+```shell
+~/workspace/pixel4_all/android/android-11.0.0_r36/device/google/coral-kernel
+grep -a "Linux" Image.lz4
+```
+
+
+
+
+
+#### 问题：编译过程可能报找不到vendor/qcom/coral/proprietary/com.qualcomm.qcrilmsgtunnel.xml
+
+解决：在`/vendor`路径下执行`grep -r "vendor/qcom/coral/proprietary/com.qualcomm.qcrilmsgtunnel.xml" ./` , 发现在`/vendor/qcom/flame/device-partial.mk`中`PRODUCT_COPY_FILES`字段赋值了`vendor/qcom/coral/proprietary/com.qualcomm.qcrilmsgtunnel.xml`,其中`coral`是pixel4L的设备号，在这里将其修改成`flame`
+
+![image-20230329220855629](pixel4刷android11.assets/image-20230329220855629.png)
+
+
+
+
+
+
+
+### 1.5.烧录aosp11镜像
 
 ```
 cd aosp9/out/target/product/blueline
@@ -134,6 +180,8 @@ vim ~/.bashrc
 #使环境变量生效
 source ~/.bashrc
 ```
+
+
 
 2）从google官网拉取kernel源码
 
@@ -242,10 +290,25 @@ source build/envsetup.sh
 lunch 
 #选择pixel 6对应的版本
 cd ../kernel/android-gs-raviole-5.10-android12-qpr3
-build/build.sh #todo[2]
+build/build.sh 
 ```
 
 `android-gs-raviole-5.10-android12-qpr3`对应内核字版本号为`5.10.81`,可以通过比对手机内核版本号来确认内核是否成功烧录到手机里
+
+#### 查看生成的内核版本
+
+```shell
+~/workspace/pixel4_all/kernel/android-11.0.0_r36/device/google/coral-kernel
+grep -a "Linux" Image.lz4
+```
+
+内核版本为`4.14.180-dirty`编译时间为Mar 29
+
+![image-20230329223143937](pixel4刷android11.assets/image-20230329223143937.png)
+
+
+
+
 
 内核编译成功后，将生成的Image.lz4拷贝到aosp12对应目录下，重新编译，将userdata.img的文件系统设置为f2fs
 
@@ -256,6 +319,12 @@ cp ~/workspace/pixel3_all/kernel/android-gs-raviole-5.10-android12-qpr3/out/andr
 cd ~/workspace/pixel3_all/android-12.0.0_r27
 make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true -j4 
 ```
+
+
+
+
+
+
 
 
 
