@@ -1,7 +1,5 @@
 # pixel6 刷 android 13
 
-**失败了，aosp 没有将编译内核生成的Image.lz4编译进boot.img，重新编译aosp，所有的镜像都不更新！！！！！**
-
 环境：大机房74服务器
 
 ## 1. aosp下载与编译
@@ -141,7 +139,7 @@ cd kernel/android-gs-raviole-5.10-android13-qpr1
 
 
 
-#### 问题1 执行~/.bin/repo init 报错，fatal: cannot get https://gerrit.googlesource.com/git-repo/clone.bundle
+**问题1 执行~/.bin/repo init 报错，fatal: cannot get https://gerrit.googlesource.com/git-repo/clone.bundle**
 
 解决方案：
 
@@ -157,7 +155,7 @@ wget https://gerrit.googlesource.com/git-repo/clone.bundle
  ~/.bin/repo init -u https://android.googlesource.com/kernel/manifest -b android-gs-raviole-5.10-android13-qpr1 --repo-url ~/opt/clone.bundle
 ```
 
-#### 问题2  执行~/.bin/repo sync 报错，fatal：无法访问`https://android.googlesource.com/kernel/...`
+**问题2  执行~/.bin/repo sync 报错，fatal：无法访问`https://android.googlesource.com/kernel/...`**
 
 解决方案：可能是用过代理，取消代理
 
@@ -318,13 +316,13 @@ Linux version 5.10.107-android13-4-00020-g02b5dfab573c-ab9358130 (build-user@bui
 
 
 
-##### 问题1 手机内核版本与aosp自带的kernel版本一致，与新编译的内核版本不一致
+##### 问题1 手机内核版本与aosp自带的kernel版本一致，与新编译的内核版本不一致（已解决）
 
 猜想1:没有将Image.lz4编译进aosp的镜像
 
-验证过程
+**验证过程**
 
-#1 查看编译好kernel下的Image.lz4镜像版本
+​	#1 查看编译好kernel下的Image.lz4镜像版本
 
 ```shell
 cd ~/workspace/pixel3_all/android-13.0.0_r30
@@ -335,13 +333,13 @@ grep -a "Linux version" device/google/raviole-kernel/Image.lz4
 
 
 
-#2 通过md5sum确认Image.lz4已经被拷贝到AOSP 树中相应的内核二进制文件位置
+​	#2 通过md5sum确认Image.lz4已经被拷贝到AOSP 树中相应的内核二进制文件位置
 
 ```shell
 md5sum
 ```
 
-#3  查看AOSP 树包含预构建的内核版本[3]
+​	#3  查看AOSP 树包含预构建的内核版本[3]
 
 AOSP 树包含预构建的内核版本。git 日志会在提交消息中显示正确的版本：
 
@@ -352,7 +350,13 @@ git log --max-count=1
 
 
 
-#4  查看AOSP 新生成的boot.img 版本
+​	#4  查看AOSP 新生成的boot.img 版本
+
+ANDROID_TARGET_KERNEL：android-13.0.0_r30/device/google/raviole-kernel
+
+ANDROID_PRODUCT_OUT：android-13.0.0_r30/out/target/product/oriole
+
+更新`ANDROID_TARGET_KERNEL/Image.lz4`，并重新编译aosp之后，`ANDROID_PRODUCT_OUT/boot.img`没有更新！另外两者版本不一致，说明aosp编译内核并没有使用`Image.lz4`
 
 ```shell
 cd ~/workspace/pixel3_all/android-13.0.0_r30/out/target/product/oriole
@@ -363,7 +367,13 @@ grep -a "Linux version" boot.img
 
 
 
+**原因分析**：通过内核版本查看`ANDROID_TARGET_KERNEL`路径下哪些文件和内核相关，发现`boot.img`与`boot-user.img`这两个文件版本和`ANDROID_PRODUCT_OUT/boot.img`相同，也许aosp在编译时根据上述两个文件生成的kernel镜像，即`ANDROID_TARGET_KERNEL`路径下`boot.img`与`boot-user.img`存在，就不将Image.lz4编译进内核镜像
 
+**解决方案**
+
+删除ANDROID_TARGET_KERNEL路径下`boot.img`与`boot-user.img`，重新编译aosp，`ANDROID_PRODUCT_OUT/boot.img`更新了！版本和`ANDROID_TARGET_KERNEL/Image.lz4`一致！
+
+重新刷机，success!!
 
 ## ref
 

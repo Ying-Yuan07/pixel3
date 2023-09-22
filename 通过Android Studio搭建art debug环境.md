@@ -22,6 +22,8 @@ Android Studio 可以用来开发App，并可以debug App，具体是通过拉�
 
 ### 2.1 art 源码下载与编译
 
+#### failed
+
 本例采用`android-9.0.0_r21`，下载源码的过程参考[pixel3 刷机过程](https://github.com/Ying-Yuan07/pixel3/blob/main/pixel%203%20%E5%88%B7%E6%9C%BA%E8%BF%87%E7%A8%8B.md) ，编译可在模拟器中运行的镜像，编译在pixel 3 物理机上需要执行`lunch aosp_blueline-userdebug` ,此处应该是`lunch aosp_x86-eng`
 
 ```shell
@@ -43,6 +45,47 @@ make -j64
 <img src="通过Android Studio搭建art debug环境.assets/image-20230515150641602.png" alt="image-20230515150641602" style="zoom: 50%;" />
 
 
+
+
+
+
+
+#### 2.1.1 art 源码下载与编译-success![10]
+
+本例采用`android-12.0.0_r25`，下载源码的过程参考[pixel3 刷机过程](https://github.com/Ying-Yuan07/pixel3/blob/main/pixel%203%20%E5%88%B7%E6%9C%BA%E8%BF%87%E7%A8%8B.md) ，编译可在模拟器中运行的镜像，编译在pixel 3 物理机上需要执行`lunch aosp_blueline-userdebug` ,此处应该是`sdk_phone_x86_64`
+
+```shell
+# android-12.0.0_r25 为aosp源码路径
+cd android-12.0.0_r25
+source build/envsetup.sh
+lunch sdk_phone_x86_64
+make -j64
+```
+
+**镜像文件**：生成在镜像在`$ANDROID_PRODUCT_OUT`路径下，其中`ANDROID_PRODUCT_OUT = android-9.0.0_r25/out/target/product/emulator_x86_64`代码被编译进了`$ANDROID_PRODUCT_OUT/system-qemu.img`,
+
+**符号文件**：`$ANDROID_PRODUCT_OUT/symbols`路径下是个模块对应的符号文件.so,其中art对应的符号文件为`libart.so`
+
+#### 2.1.2共享 AVD 系统映像以供他人配合使用 Android Studio
+
+```shell
+$make -j32 sdk sdk_repo
+
+[ 99% 541/543] build out/host/linux-x86/sdk/sdk_phone_x86_64/repository.xml
+out/host/linux-x86/sdk/sdk_phone_x86_64/repository.xml validates
+[100% 543/543] build out/host/linux-x86/sdk/sdk_phone_x86_64/repo-sys-img.xml
+out/host/linux-x86/sdk/sdk_phone_x86_64/repo-sys-img.xml validates
+```
+
+此操作会在 `aosp-master/out/host/linux-x86/sdk/sdk_phone_x86` 下生成两个文件：
+
+1.`sdk-repo-linux-system-images-eng.[username].zip`
+
+2.`repo-sys-img.xml`
+
+`sdk-repo-linux-system-images-eng.[username].zip` 压缩包包含模拟器启动系统锁需要的所有系统镜像。
+
+解压该文件，其中有个文件夹`x86_64`。
 
 
 
@@ -137,13 +180,15 @@ new project-->Empty Views Activity, 等待1-2mins，等待App项目初始化完�
 
 将2.1中下载的android-9.0.0_r21/art文件夹，拷贝到$PROGECT_PATH/app/src
 
-#### 2.2.5 将art的符号文件拷贝到App项目（#todo）
+#### 2.2.5 将art的符号文件拷贝到App项目
 
-在$PROGECT_PATH/app下新建image文件夹，将art的符号文件$ANDROID_PRODUCT_OUT/symbols/system/lib/libart.so拷贝到image文件夹下
+在$PROGECT_PATH/app下新建image文件夹，将art的符号文件$ANDROID_PRODUCT_OUT/symbols/system/*/libart.so拷贝到image文件夹下
+
+*：lib 或者lib64，根据avd的为数而定
 
 #### 2.2.6 修改Run/Debug Configuration
 
-debugger-->Debug type：选择Native Only
+debugger-->Debug type：选择Native Only，或者 Daul(Java + native)：可以同时debug app 与native代码
 
 debugger-->Symbol Directories：选择编译art模块生成的符号文件所在路径，即$ANDROID_PRODUCT_OUT/symbols/system/lib 或者$ANDROID_PRODUCT_OUT/symbols/system/lib64，根据avd的系统架构而定
 
@@ -159,7 +204,11 @@ debugger-->Symbol Directories：选择编译art模块生成的符号文件所在
 
 ## 3. Debug
 
-### 3.1 启动模拟器，运行可执行文件
+### 3.1 启动模拟器，运行编译生成的镜像
+
+#### failed
+
+【！！avd 并没有真的加载指定的镜像，还是运行的原生镜像】
 
 art源码在编译后被打包进`$ANDROID_PRODUCT_OUT/system.img`（或者system-qemu.img），可通过指令拉起avd，并通过`-system`指定system.img，在Android Studio的Terminal执行
 
@@ -168,6 +217,22 @@ emulator -avd <avd name> -verbose -no-boot-anim -system /path/to/system.img
 ```
 
 成功的话，会出现一个手机界面
+
+#### success！[10]
+
+在Android Studio的Terminal执行
+
+```shell
+emulator -avd <avd name> -verbose -no-boot-anim -sysdir x86_64/
+```
+
+`x86_64/`为`2.1.2`中解压出的镜像目录
+
+成功的话，会出现一个手机界面，点开【setting】-->【about phone】->【build number】,可以看到编译镜像的时间与host user,即avd加载了目标镜像。
+
+![image-20230601203325873](通过Android Studio搭建art debug环境.assets/image-20230601203325873.png)
+
+
 
 ### 3.2 debug app
 
@@ -487,3 +552,7 @@ Android studio-->file-->Invalidate Caches-->Invalidate and Restart
 [8] https://blog.csdn.net/yanceyxin/article/details/109863146
 
 [9] https://www.logfault.com/thread-4008.htm
+
+[10] ruby, 构建Android模拟器系统运行镜像, https://zhuanlan.zhihu.com/p/545947820 , 2022.12.09  
+
+[11] 昨夜星辰_zhangjg, 使用Android模拟器调试linux内核, https://blog.csdn.net/zhangjg_blog/article/details/84291663?spm=1001.2101.3001.6650.1&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1-84291663-blog-119890214.235%5Ev36%5Epc_relevant_default_base3&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-1-84291663-blog-119890214.235%5Ev36%5Epc_relevant_default_base3&utm_relevant_index=2 , 2018.11.27

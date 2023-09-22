@@ -1,7 +1,5 @@
 # pixel6 刷 android 12
 
-**失败了，aosp 没有将编译内核生成的Image.lz4编译进boot.img，重新编译aosp，所有的镜像都不更新！！！！！**
-
 环境：大机房74服务器
 
 ## 1. aosp下载与编译
@@ -254,36 +252,18 @@ https://zhuanlan.zhihu.com/p/53009043
 ```bash
 cp ~/workspace/pixel3_all/kernel/android-gs-raviole-5.10-android12-qpr3/out/android-gs-pixel-5.10/dist/Image.lz4 ~/workspace/pixel3_all/android-12.0.0_r27/device/google/raviole-kernel/
 cd ~/workspace/pixel3_all/android-12.0.0_r27
-make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true -j4 
+make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true -j64 
 ```
 
 
 
-##### 问题1 手机内核版本与aosp自带的kernel版本一致，与新编译的内核版本不一致
+**问题1 手机内核版本与aosp自带的kernel版本一致，与新编译的内核版本不一致**
 
-猜想1:没有将Image.lz4编译进aosp的镜像
-
-Image.lz4版本是5.10.81
-
-![image-20230324091101306](pixel3 刷安卓12.assets/image-20230324091101306.png)
-
-
-
-aosp生成的版本是5.10.43！！！！编译失败
-
-
-
-![image-20230324091040508](pixel3 刷安卓12.assets/image-20230324091040508.png)
-
-
-
-
+参考pixel6刷android13
 
 ## 2.4 烧录内核代码
 
-
-
-
+参考pixel6刷android13
 
 ## refs
 
