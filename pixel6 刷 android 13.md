@@ -14,6 +14,8 @@
 
 ![image-20230303081059325](pixel6 刷 android 13.assets/image-20230303081059325.png)
 
+
+
 ```shell
 mkdir android-13.0.0_r30   
 cd android-13.0.0_r30
@@ -82,11 +84,19 @@ make clobber
 
 ### 1.5 烧录aosp13镜像
 
-```
+```shell
 cd android-13.0.0_r30/out/target/product/oriole
 adb reboot bootloader
+#1 将两个slot都刷成最新的系统
+fastboot flash bootloader --slot=all bootloader.img 
+#2 刷入所有的镜像
 fastboot flashall -w
 ```
+
+**【重要！！！】**
+
+Pixel6用的谷歌的Tensor CPU，里面有个刷机计数器，一旦刷过安卓13，这个计数器就永远不会回退，一旦检测到安卓12的bootloader，就会锁死
+系统成砖。问题是一日刷入安卓13.两个slot里只有一个会随系统更新为安卓13的bootloader，剩下的一个slot还是安卓12的。所以后面可以通过删除刷机包中的bootloader文件强制刷入和运行安卓12(见:https://t.zsxq.com/0aGLxz8ei)，这个安卓12会在安卓13的bootloader上正常运行，但是这个安卓12也会有各种莫名其妙的问题。
 
 查看是否刷新成功，打开手机的`setting`-`system`-`Abount phone`-`Build Number`，可以看到当前安卓的版本，即编译的指定版本`TQ1A.230205.002`
 
@@ -167,42 +177,55 @@ git config  --global --unset http.proxy
 
 ### 2.2 编译kernel
 
-首先我们在AOSP源码目录下准备好编译环境 ,用于启动一些编译时所需要的环境变量，例如：交叉编译工具等
+#### Update the vendor ramdisk[4]
+
+##### Copy the `vendor_ramdisk` from a locally built Android platform repository.
+
+| Device                               | DEVICE_RAMDISK_PATH                                          |
+| :----------------------------------- | :----------------------------------------------------------- |
+| Pixel 6 (oriole) Pixel 6 Pro (raven) | prebuilts/boot-artifacts/ramdisks/vendor_ramdisk-**oriole.img** |
+| Pixel 6a (bluejay)                   | private/devices/google/bluejay/vendor_ramdisk-**bluejay.img** |
+
+```{.devsite-terminal
+cp ANDROID_ROOT/out/target/product/DEVICE/vendor_ramdisk-debug.img \
+   KERNEL_REPO_ROOT/DEVICE_RAMDISK_PATH/vendor_ramdisk-DEVICE.img
+```
+
+
+
+#### 编译方式一
 
 ```bash
+#1 首先我们在AOSP源码目录下准备好编译环境 ,用于启动一些编译时所需要的环境变量，例如：交叉编译工具等
 cd ~/workspace/pixel3_all/android-13.0.0_r30/
 source build/envsetup.sh
 lunch aosp_oriole-userdebug
-```
-
-
-
-编译内核
-
-```bash
+#2 build kernel
 cd ~/workspace/pixel3_all/kernel/android-gs-raviole-5.10-android13-qpr1
-build/build.sh
-```
-
-安卓13 已经抛弃了`build/build.sh`[1],采用`bazel `,但是我们从goole拉下来的kernel中没有common目录！！
-
-```shell
-tools/bazel build //common:kernel_aarch64_dist
-```
-
-
-
-有人通过`build/build.sh`成功编译了`android-msm-coral-4.14-android13`[2]
-
-```shell
 KBUILD_BUILD_VERSION=1 KBUILD_BUILD_USER=build-user KBUILD_BUILD_HOST=build-host KBUILD_CONFIG=private/gs-google/build.config.aarch64 build/build.sh
 ```
 
 大概需要编译一个半小时
 
+#### 编译方式二【Failed】
+
+安卓13 已经抛弃了`build/build.sh`[1],采用`bazel `,但是我们从goole拉下来的kernel中没有common目录！！，
+
+```shell
+cd ~/workspace/pixel3_all/android-13.0.0_r30/
+source build/envsetup.sh
+lunch aosp_oriole-userdebug
+
+tools/bazel build //common:kernel_aarch64_dist
+```
 
 
-内核二进制文件、模块和相应的映像位于 `out/BRANCH/dist` 目录下，将Image.lz4-dtb拷贝到Android13系统源码的`device/google/raviole-kernel`目录下，   
+
+### 2.3 重新编译aosp
+
+#### 2.3.1**将编译好的Image.lz4-dtb拷贝到AOSP**
+
+2.2中编译好的内核二进制文件、模块和相应的映像位于 `out/BRANCH/dist` 目录下，将Image.lz4-dtb拷贝到Android13系统源码的`device/google/raviole-kernel`目录下，   
 
 ```bash
 cp ~/workspace/pixel3_all/kernel/android-gs-raviole-5.10-android13-qpr1/out/android13-gs-pixel-5.10-gs101/dist/Image.lz4 ~/workspace/pixel3_all/android-13.0.0_r30/device/google/raviole-kernel
@@ -210,18 +233,42 @@ cp ~/workspace/pixel3_all/kernel/android-gs-raviole-5.10-android13-qpr1/out/andr
 
 
 
-重新编译aosp
+#### 2.3.2**删除AOSP原生的**`boot.img`与`boot-user.img`
+
+删除ANDROID_TARGET_KERNEL路径下`boot.img`与`boot-user.img`，如果不删除这两个文件，aosp在编译时根据上述两个文件生成的kernel镜，就不将Image.lz4编译进内核镜像
+
+```shell
+ANDROID_TARGET_KERNEL：android-13.0.0_r30/device/google/raviole-kernel
+ANDROID_PRODUCT_OUT：android-13.0.0_r30/out/target/product/oriole
+```
+
+#### 2.3.3**重新编译aosp**
 
 ```bash
 cd ~/workspace/pixel3_all/android-13.0.0_r30/
 source build/envsetup.sh
 lunch aosp_oriole-userdebug 
-make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true -j4
+export WITH_DEXPREOPT=false
+make BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE=f2fs TARGET_USERIMAGES_USE_F2FS=true ART_TARGET_ANDROID=true -j4
 ```
 
 
 
-重新刷机
+#### 2.3.4**重新刷机**
+
+**【重要！！！】**
+
+Pixel6用的谷歌的Tensor CPU，里面有个刷机计数器，一旦刷过安卓13，这个计数器就永远不会回退，一旦检测到安卓12的bootloader，就会锁死
+系统成砖。问题是一日刷入安卓13.两个slot里只有一个会随系统更新为安卓13的bootloader，剩下的一个slot还是安卓12的。所以后面可以通过删除刷机包中的bootloader文件强制刷入和运行安卓12(见:https://t.zsxq.com/0aGLxz8ei)，这个安卓12会在安卓13的bootloader上正常运行，但是这个安卓12也会有各种莫名其妙的问题。
+
+```shell
+#1 将两个slot都刷成最新的系统
+fastboot flash bootloader --slot=all bootloader.img 
+#2 刷入所有的镜像
+fastboot flashall -w
+```
+
+
 
 ```bash
 #fastboot flashall -w
@@ -314,7 +361,7 @@ oriole:/ # cat /proc/version
 Linux version 5.10.107-android13-4-00020-g02b5dfab573c-ab9358130 (build-user@build-host) (Android (8508608, based on r450784e) clang version 14.0.7 (https://android.googlesource.com/toolchain/llvm-project 4c603efb0cca074e9238af8b4106c30add4418f6), LLD 14.0.7) #1 SMP PREEMPT Thu Dec 1 18:28:18 UTC 2022
 ```
 
-
+#### 2.3.5 问题
 
 ##### 问题1 手机内核版本与aosp自带的kernel版本一致，与新编译的内核版本不一致（已解决）
 
@@ -382,4 +429,12 @@ grep -a "Linux version" boot.img
 [2]编译android-msm-coral-4.14-android13， https://www.akr-developers.com/d/629-piexl4google/2  , 2022.9.23
 
 [3] 确定内核版本, https://source.android.com/docs/setup/build/building-kernels?hl=zh-cn#id-version
+
+[4] Update the vendor ramdisk. https://source.android.com/docs/setup/build/building-pixel-kernels#update_the_vendor_ramdisk
+
+
+
+
+
+
 

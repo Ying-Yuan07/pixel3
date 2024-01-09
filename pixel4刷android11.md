@@ -96,7 +96,7 @@ cd ~/workspace/pixel4_all/android/android-11.0.0_r36
 ```shell
 cd ~/workspace/pixel4_all/android/android-11.0.0_r36
 source build/envsetup.sh
-lunch aosp_oriole-userdebug 
+lunch aosp_flame-userdebug
 make TARGET_KERNEL_USE=4.14 -j64 RELAX_USES_LIBRARY_CHECK=true
 ```
 

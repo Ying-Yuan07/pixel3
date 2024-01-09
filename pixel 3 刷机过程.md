@@ -2,6 +2,8 @@
 
 参考https://github.com/lihua-yang/Pixel3
 
+官方教程： https://source.android.com/docs/setup/start/requirements?hl=zh-cn
+
 ## 1. 下载aosp源码
 
 ### 1.1 repo的下载与安装
