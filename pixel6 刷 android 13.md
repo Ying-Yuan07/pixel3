@@ -70,7 +70,8 @@ cd ~/workspace/pixel3_all/android-13.0.0_r30/
 ```shell
 cd ~/workspace/pixel3_all/android-13.0.0_r30/
 source build/envsetup.sh
-lunch aosp_oriole-userdebug 
+lunch aosp_oriole-userdebug
+export WITH_DEXPREOPT=false
 make TARGET_KERNEL_USE=5.10 -j64 RELAX_USES_LIBRARY_CHECK=true
 ```
 
