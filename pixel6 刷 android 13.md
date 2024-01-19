@@ -122,9 +122,13 @@ uname -a #查看内核版本
 
 ### 2.1 下载内核代码
 
-#### 将下载源切换回google
+可以从google官网或者清华源下载内核代码及其构建工具
 
-1）查看是否有REPO_URL环境变量，若有，将其修改为`https://gerrit.googlesource.com/git-repo`
+#### 2.1.1 从google官网下载
+
+1）将下载源切换回google
+
+查看是否有REPO_URL环境变量，若有，将其修改为`https://gerrit.googlesource.com/git-repo`
 
 ```shell
 #在~/.bashrc中添加 export REPO_URL="https://gerrit.googlesource.com/git-repo"
@@ -147,6 +151,53 @@ cd kernel/android-gs-raviole-5.10-android13-qpr1
 拉取下来的kernel与工具如下
 
 <img src="pixel6 刷 android 13.assets/image-20230310221340419.png" alt="image-20230310221340419" style="zoom:80%;" />
+
+
+
+#### 2.1.2 从清华源下载[ref from menguozi]
+
+1）将下载源切换回清华源
+
+将REPO_URL环境变量，改为`https://mirrors.tuna.tsinghua.edu.cn/git/git-repo`
+
+```shell
+#修改REPO_URL环境变量
+export REPO_URL="https://mirrors.tuna.tsinghua.edu.cn/git/git-repo" 
+#查看环境变量是否生效
+echo $REPO_URL 
+```
+
+2）从清华源拉取kernel源码
+
+初始化本地仓库
+
+```bash
+mkdir -p kernel/android-gs-raviole-5.10-android13-qpr1
+cd kernel/android-gs-raviole-5.10-android13-qpr1 
+/.bin/repo init -u https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/kernel/manifest -b android-gs-raviole-5.10-android13-qpr1
+```
+
+初始化本地仓库拉取下来的.repo目录下的配置文件中，记录的还是谷歌官网，手动将`android.googlesource.com`改成 `mirrors.tuna.tsinghua.edu.cn/git/AOSP`
+
+```shell
+#查看记录谷歌源的文件
+grep -r "android.googlesource.com"
+#手动将`android.googlesource.com`改成 `mirrors.tuna.tsinghua.edu.cn/git/AOSP`
+vim .repo/manifests/default.xml 
+vim .repo/repo/docs/windows.mdv
+vim .repo/manifests/default.xml 
+vim .repo/repo/docs/windows.md
+vim .repo/repo/docs/repo-hooks.md
+```
+
+![image-20240119090909185](pixel6 刷 android 13.assets/image-20240119090909185.png)
+
+
+
+```shell
+#Checking out code
+~/.bin/repo sync -j4
+```
 
 
 
@@ -211,6 +262,8 @@ KBUILD_BUILD_VERSION=1 KBUILD_BUILD_USER=build-user KBUILD_BUILD_HOST=build-host
 #### 编译方式二【Failed】
 
 安卓13 已经抛弃了`build/build.sh`[1],采用`bazel `,但是我们从goole拉下来的kernel中没有common目录！！，
+
+这种方式在编译common-kernel时有效
 
 ```shell
 cd ~/workspace/pixel3_all/android-13.0.0_r30/
