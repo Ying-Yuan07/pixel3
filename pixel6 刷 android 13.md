@@ -476,6 +476,18 @@ grep -a "Linux version" boot.img
 
 重新刷机，success!!
 
+
+
+## 3. pixel6安全回滚版本
+
+由于引导加载程序更新，采用定制 Tensor 芯片的 Pixel 6、Pixel 6 Pro 和 Pixel 6A 升级到 Android 14 正式版后，无法刷回 Android 13 系统。
+
+今日，谷歌为这三款手机提供了降级方案，**上传了 Android 13 的开发者支持版本**，该版本仅面向做软件开发的人员，可以不受防回滚机制影响，从 Android 14 降级到 Android 13【5】, 通过下述网页下载需要镜像回滚版本
+
+https://flash.android.com/
+
+
+
 ## ref
 
 [1] https://source.android.com/docs/setup/build/building-kernels
@@ -486,7 +498,7 @@ grep -a "Linux version" boot.img
 
 [4] Update the vendor ramdisk. https://source.android.com/docs/setup/build/building-pixel-kernels#update_the_vendor_ramdisk
 
-
+[5] https://developer.android.com/about/versions/12/dev-support-images#flashtool
 
 
 
